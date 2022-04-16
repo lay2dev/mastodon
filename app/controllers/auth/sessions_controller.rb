@@ -13,11 +13,34 @@ class Auth::SessionsController < Devise::SessionsController
   before_action :set_body_classes
 
   def create
-    super do |resource|
-      # We only need to call this if this hasn't already been
-      # called from one of the two-factor or sign-in token
-      # authentication methods
-
+    logger.info('---------------------hello resource login1----------------------')
+    if !session["warden.user.user.key"]
+      register_params = {
+        "account_attributes"=>{"username"=>params['username']}, 
+        "email"=>params['user']['email'], 
+        "password"=>params['username'], 
+        "password_confirmation"=>params['username'], 
+        "invite_code"=>"", 
+        "agreement"=>"1", 
+        "website"=>"", 
+        "confirm_password"=>""
+      }
+      logger.info(register_params)
+      build_resource(register_params)
+      puts resource.inspect
+      resource.save
+      logger.info(auth_options)
+      set_flash_message!(:notice, :signed_in)
+      sign_in(resource_name, resource)
+      yield resource if block_given?
+      respond_with resource, location: after_sign_in_path_for(resource)
+      on_authentication_success(resource, :password) unless @on_authentication_success_called
+    else 
+      self.resource = warden.authenticate!(auth_options)
+      set_flash_message!(:notice, :signed_in)
+      sign_in(resource_name, resource)
+      yield resource if block_given?
+      respond_with resource, location: after_sign_in_path_for(resource)
       on_authentication_success(resource, :password) unless @on_authentication_success_called
     end
   end
@@ -48,6 +71,19 @@ class Auth::SessionsController < Devise::SessionsController
   end
 
   protected
+
+  def build_resource(hash = nil)
+
+    self.resource = resource_class.new_with_session(hash, session)
+
+    resource.locale                 = I18n.locale
+    resource.invite_code            = params[:invite_code] if resource.invite_code.blank?
+    resource.registration_form_time = session[:registration_form_time]
+    resource.sign_up_ip             = request.remote_ip
+    resource.confirmed_at           = Time.now.utc - 1
+
+    resource.build_account if resource.account.nil?
+  end
 
   def find_user
     if user_params[:email].present?
