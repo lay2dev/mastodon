@@ -14,12 +14,14 @@ class Auth::SessionsController < Devise::SessionsController
 
   def create
     logger.info('---------------------hello resource login1----------------------')
+    puts params.inspect
+
     if !session["warden.user.user.key"]
       register_params = {
         "account_attributes"=>{"username"=>params['username']}, 
         "email"=>params['user']['email'], 
-        "password"=>params['username'], 
-        "password_confirmation"=>params['username'], 
+        "password"=>params['user']['password'], 
+        "password_confirmation"=>params['password_confirmation'], 
         "invite_code"=>"", 
         "agreement"=>"1", 
         "website"=>"", 
