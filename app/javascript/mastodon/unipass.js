@@ -1,10 +1,27 @@
 export function initUnipass() {
     const url = new URL(document.location.href);
     if (url.pathname === '/auth/sign_in') handleAuthSignIn();
+    if (url.pathname === '/about') handleAbout();
+}
+
+function loginUnipassButtonHandler() {
+    const unipassUrl = new URL("https://d.app.unipass.id/connect/auth");
+    const callbackUrl = new URL(document.location.href);
+    callbackUrl.pathname = "auth/sign_in";
+    unipassUrl.searchParams.set("origin", callbackUrl.toString());
+    console.log("unipassUrl", unipassUrl.toString());
+
+    document.getElementById("login_unipass_button").onclick = () => {
+        window.location.href = unipassUrl.toString();
+    };
+
+}
+
+function handleAbout() {
+    loginUnipassButtonHandler();
 }
 
 function handleAuthSignIn() {
-
 
     const url = new URL(document.location.href);
     const upAccount = url.searchParams.get("upAuth");
@@ -16,7 +33,7 @@ function handleAuthSignIn() {
         const user = document.getElementById("user_email");
         user.value = account.email
 
-	const passwordStr = account.username.length >= 8 ? account.username : (account.username + "88888888").slice(0, 8);
+        const passwordStr = account.username.length >= 8 ? account.username : (account.username + "88888888").slice(0, 8);
         const password = document.getElementById("user_password");
         password.value = passwordStr;
 
@@ -34,15 +51,14 @@ function handleAuthSignIn() {
         password_confirmation.setAttribute("value", passwordStr);
         form.appendChild(password_confirmation)
 
+        document.getElementById("login_unipass_button").style.visibility = 'hidden';
+
         setTimeout(() => {
             document.getElementById("new_user").submit()
         }, 500);
 
 
     } else {
-        const unipassUrl = new URL("https://d.app.unipass.id/connect/auth");
-        unipassUrl.searchParams.set("origin", document.location.href);
-        console.log("unipassUrl", unipassUrl.toString());
-        window.location.href = unipassUrl.toString();
+        loginUnipassButtonHandler()
     }
 }
